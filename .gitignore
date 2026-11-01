@@ -1,0 +1,66 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.env/
+*.log
+
+# --- Nuke ---
+*.autosave
+*.nk~
+*.nk.autosave
+*.nk.bak
+*.nk.tmp
+*.gizmo~
+*.tmp
+crash*.log
+.nuke_autosaves/
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# --- Editors / IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.cursor/
+
+# --- Secrets / local prefs ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+credentials/
+local_settings.py
+*_local.py
+
+# --- Backup / scratch ---
+*.bak
+*.bak-*
+menu.py.bak*
+*.orig
+*.rej
+tests/_sync_log_*.json
+tests/_icon_mount_report_*.json
+tests/_dedupe_report_*.json
+
+# Keep plugin sources: gizmos/, python/, nk_files/, icons/, third_party/, init.py, menu.py

@@ -1,0 +1,404 @@
+#! C:/Program Files/Nuke10.0v4/nuke-10.0.4.dll -nx
+version 10.0 v4
+Group {
+ onCreate {
+if '__wlf_SoftGlow_0_1_4' not in locals():
+    class __wlf_SoftGlow_0_1_4(object):
+
+        @classmethod
+        def knob_changed(cls):
+            k = nuke.thisKnob()
+            n = nuke.thisNode()
+            if k.name() == "effect_only":
+                n["operation"].setEnabled(not k.value())
+            elif (k.name() == "inputChange" 
+                and n["W"].value() == "none" 
+                and n.input(1)
+                and "rgba.alpha" in n.input(1).channels()
+            ):
+                n["W"].setValue("rgba.alpha")
+}
+ knobChanged {
+try:
+    __wlf_SoftGlow_0_1_4.knob_changed()
+except NameError:
+    pass
+}
+ name SoftGlow1
+ tile_color 0xcc804eff
+ addUserKnob {20 SoftGlow l "SoftGlow v0.1.4"}
+ addUserKnob {41 tint l tint(染色) t 辉光染色 T Glow1.tint}
+ addUserKnob {41 tolerance l tolerance(阈值) t 辉光阈值，低于此值的像素不影响辉光。 T Glow1.tolerance}
+ addUserKnob {41 brightness l brightness(亮度) T Glow1.brightness}
+ addUserKnob {41 saturation l saturation(饱和度) t 辉光饱和度 T Glow1.saturation}
+ addUserKnob {41 W l "width channel(宽度通道)" t "宽度通道，为每个像素单独指定尺寸百分比， 1 代表 100%。\n连接 width 输入时从 width 输入取，否则从默认输入取。" T CopyWidth.from0}
+ addUserKnob {26 ""}
+ addUserKnob {7 size l size(尺寸) R 0 200}
+ size 100
+ addUserKnob {3 level l level(级数) t "辉光级数，越高渲染越慢。最大为 10，为 1 时效果同原生 Glow。"}
+ level 5
+ addUserKnob {7 ratio l ratio(比例) t "下一级辉光相对于上一级辉光的比例, 1 代表 100% "}
+ ratio 0.5
+ addUserKnob {41 operation t 效果的叠加模式 T MergeOperation.operation}
+ addUserKnob {6 effect_only l "effect only" t 是否只输出显示效果，不输出原图。 -STARTLINE}
+ addUserKnob {41 filter t 辉光模糊算法 T Glow1.filter}
+ addUserKnob {7 mix t 计算后的结果和计算前的结果进行混合}
+ mix 1
+}
+ Constant {
+  inputs 0
+  channels mask
+  color 1
+  name Constant2
+  xpos 257
+  ypos -1196
+ }
+ Input {
+  inputs 0
+  name width
+  xpos 141
+  ypos -1228
+  number 1
+ }
+ Input {
+  inputs 0
+  name Input
+  xpos -61
+  ypos -1215
+ }
+set N9576c00 [stack 0]
+ Switch {
+  inputs 2
+  which {{"!\[string is false \[input parent 1]]"}}
+  name Switch3
+  xpos 141
+  ypos -1193
+ }
+push $N9576c00
+ Copy {
+  inputs 2
+  from0 none
+  to0 mask.a
+  name CopyWidth
+  xpos 141
+  ypos -1148
+ }
+ Copy {
+  inputs 2
+  from0 mask.a
+  to0 mask.a
+  name Copy1
+  xpos 141
+  ypos -1086
+  disable {{"\[input this 0].from0 != 0"}}
+ }
+set Nc4d04800 [stack 0]
+ Glow2 {
+  tint {{parent.Glow1.tint}}
+  tolerance {{parent.Glow1.tolerance}}
+  brightness {{parent.Glow1.brightness}}
+  saturation {{parent.Glow1.saturation}}
+  W {{{parent.Glow1.W}}}
+  effect_only true
+  size {{"parent.size * parent.ratio ** level"}}
+  filter {{parent.Glow1.filter}}
+  name Glow10
+  label "level \[ value level ]"
+  xpos 1250
+  ypos -276
+  addUserKnob {20 User}
+  addUserKnob {3 level}
+  level 9
+ }
+push $Nc4d04800
+ Glow2 {
+  tint {{parent.Glow1.tint}}
+  tolerance {{parent.Glow1.tolerance}}
+  brightness {{parent.Glow1.brightness}}
+  saturation {{parent.Glow1.saturation}}
+  W {{{parent.Glow1.W}}}
+  effect_only true
+  size {{"parent.size * parent.ratio ** level"}}
+  filter {{parent.Glow1.filter}}
+  name Glow9
+  label "level \[ value level ]"
+  xpos 1250
+  ypos -356
+  addUserKnob {20 User}
+  addUserKnob {3 level}
+  level 8
+ }
+push $Nc4d04800
+ Glow2 {
+  tint {{parent.Glow1.tint}}
+  tolerance {{parent.Glow1.tolerance}}
+  brightness {{parent.Glow1.brightness}}
+  saturation {{parent.Glow1.saturation}}
+  W {{{parent.Glow1.W}}}
+  effect_only true
+  size {{"parent.size * parent.ratio ** level"}}
+  filter {{parent.Glow1.filter}}
+  name Glow8
+  label "level \[ value level ]"
+  xpos 1250
+  ypos -436
+  addUserKnob {20 User}
+  addUserKnob {3 level}
+  level 7
+ }
+push $Nc4d04800
+ Glow2 {
+  tint {{parent.Glow1.tint}}
+  tolerance {{parent.Glow1.tolerance}}
+  brightness {{parent.Glow1.brightness}}
+  saturation {{parent.Glow1.saturation}}
+  W {{{parent.Glow1.W}}}
+  effect_only true
+  size {{"parent.size * parent.ratio ** level"}}
+  filter {{parent.Glow1.filter}}
+  name Glow7
+  label "level \[ value level ]"
+  xpos 1250
+  ypos -516
+  addUserKnob {20 User}
+  addUserKnob {3 level}
+  level 6
+ }
+push $Nc4d04800
+ Glow2 {
+  tint {{parent.Glow1.tint}}
+  tolerance {{parent.Glow1.tolerance}}
+  brightness {{parent.Glow1.brightness}}
+  saturation {{parent.Glow1.saturation}}
+  W {{{parent.Glow1.W}}}
+  effect_only true
+  size {{"parent.size * parent.ratio ** level"}}
+  filter {{parent.Glow1.filter}}
+  name Glow6
+  label "level \[ value level ]"
+  xpos 1250
+  ypos -596
+  addUserKnob {20 User}
+  addUserKnob {3 level}
+  level 5
+ }
+push $Nc4d04800
+ Glow2 {
+  tint {{parent.Glow1.tint}}
+  tolerance {{parent.Glow1.tolerance}}
+  brightness {{parent.Glow1.brightness}}
+  saturation {{parent.Glow1.saturation}}
+  W {{{parent.Glow1.W}}}
+  effect_only true
+  size {{"parent.size * parent.ratio ** level"}}
+  filter {{parent.Glow1.filter}}
+  name Glow5
+  label "level \[ value level ]"
+  xpos 1250
+  ypos -676
+  addUserKnob {20 User}
+  addUserKnob {3 level}
+  level 4
+ }
+push $Nc4d04800
+ Glow2 {
+  tint {{parent.Glow1.tint}}
+  tolerance {{parent.Glow1.tolerance}}
+  brightness {{parent.Glow1.brightness}}
+  saturation {{parent.Glow1.saturation}}
+  W {{{parent.Glow1.W}}}
+  effect_only true
+  size {{"parent.size * parent.ratio ** level"}}
+  filter {{parent.Glow1.filter}}
+  name Glow4
+  label "level \[ value level ]"
+  xpos 1250
+  ypos -756
+  addUserKnob {20 User}
+  addUserKnob {3 level}
+  level 3
+ }
+push $Nc4d04800
+ Glow2 {
+  tint {{parent.Glow1.tint}}
+  tolerance {{parent.Glow1.tolerance}}
+  brightness {{parent.Glow1.brightness}}
+  saturation {{parent.Glow1.saturation}}
+  W {{{parent.Glow1.W}}}
+  effect_only true
+  size {{"parent.size * parent.ratio ** level"}}
+  filter {{parent.Glow1.filter}}
+  name Glow3
+  label "level \[ value level ]"
+  xpos 1250
+  ypos -836
+  addUserKnob {20 User}
+  addUserKnob {3 level}
+  level 2
+ }
+push $Nc4d04800
+ Glow2 {
+  tint {{parent.Glow1.tint}}
+  tolerance {{parent.Glow1.tolerance}}
+  brightness {{parent.Glow1.brightness}}
+  saturation {{parent.Glow1.saturation}}
+  W {{{parent.Glow1.W}}}
+  effect_only true
+  size {{"parent.size * parent.ratio ** level"}}
+  filter {{parent.Glow1.filter}}
+  name Glow2
+  label "level \[ value level ]"
+  xpos 1250
+  ypos -916
+  addUserKnob {20 User}
+  addUserKnob {3 level}
+  level 1
+ }
+push $Nc4d04800
+ Glow2 {
+  W mask.a
+  effect_only true
+  size {{"parent.size * parent.ratio ** level"}}
+  name Glow1
+  label "level \[ value level ]"
+  xpos 1250
+  ypos -996
+  addUserKnob {20 User}
+  addUserKnob {3 level}
+ }
+ Constant {
+  inputs 0
+  channels rgb
+  name Constant1
+  xpos 1160
+  ypos -1076
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name MergeLevel0
+  xpos 1160
+  ypos -948
+  disable {{"!((parent.level > \[input this 1].level) && (\[input this 1].size >= 2))"}}
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name MergeLevel1
+  xpos 1160
+  ypos -868
+  disable {{"!((parent.level > \[input this 1].level) && (\[input this 1].size >= 2))"}}
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name MergeLevel2
+  xpos 1160
+  ypos -788
+  disable {{"!((parent.level > \[input this 1].level) && (\[input this 1].size >= 2))"}}
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name MergeLevel3
+  xpos 1160
+  ypos -708
+  disable {{"!((parent.level > \[input this 1].level) && (\[input this 1].size >= 2))"}}
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name MergeLevel4
+  xpos 1160
+  ypos -628
+  disable {{"!((parent.level > \[input this 1].level) && (\[input this 1].size >= 2))"}}
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name MergeLevel5
+  xpos 1160
+  ypos -548
+  disable {{"!((parent.level > \[input this 1].level) && (\[input this 1].size >= 2))"}}
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name MergeLevel6
+  xpos 1160
+  ypos -468
+  disable {{"!((parent.level > \[input this 1].level) && (\[input this 1].size >= 2))"}}
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name MergeLevel7
+  xpos 1160
+  ypos -388
+  disable {{"!((parent.level > \[input this 1].level) && (\[input this 1].size >= 2))"}}
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name MergeLevel8
+  xpos 1160
+  ypos -308
+  disable {{"!((parent.level > \[input this 1].level) && (\[input this 1].size >= 2))"}}
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name MergeLevel9
+  xpos 1160
+  ypos -228
+  disable {{"!((parent.level > \[input this 1].level) && (\[input this 1].size >= 2))"}}
+ }
+ Assert {
+  expression {{"parent.level >= 0 && parent.level <= 10"}}
+  message "level should be 0-10, got \[value parent.level]"
+  name Assert1
+  xpos 1160
+  ypos -196
+ }
+ Multiply {
+  channels rgb
+  value {{"1 / max(parent.level, 1)"}}
+  name Multiply1
+  label "divide by level count"
+  xpos 1160
+  ypos -164
+ }
+set Nafc22800 [stack 0]
+push $Nafc22800
+push $N9576c00
+ Merge2 {
+  inputs 2
+  operation screen
+  bbox B
+  name MergeOperation
+  xpos 580
+  ypos -116
+ }
+ Switch {
+  inputs 2
+  which {{parent.effect_only}}
+  name Switch1
+  xpos 580
+  ypos -84
+ }
+push $N9576c00
+ Merge2 {
+  inputs 2
+  operation copy
+  bbox B
+  mix {{parent.mix}}
+  name Merge4
+  xpos 0
+  ypos -52
+ }
+ Output {
+  name Output1
+  xpos 0
+  ypos -20
+ }
+end_group

@@ -1,0 +1,488 @@
+#! C:/Program Files/Nuke10.0v4/nuke-10.0.4.dll -nx
+# TODO: Rename `exr_threshold` -> `seq_threshold`
+# TODO: Rename `reading_exr` -> `reading_seq`
+version 10.0 v4
+Gizmo {
+  onCreate {
+if '__wlf_Write_1_58_3' not in locals():
+    # need call this before create to affect first node. 
+    # already done in lib/pref.py
+    nuke.knobDefault("wlf_Write.__initiated", "false") 
+    class __wlf_Write_1_58_3(object):
+        @classmethod
+        def preset_path(cls, name):
+            import os
+            return os.path.expanduser("~/.nuke/wlf_Write.%s.preset.json" % name)
+
+        @classmethod
+        def apply_preset(cls, name):
+            import json
+            import codecs
+            n = nuke.thisNode()
+            try:
+                with codecs.open(cls.preset_path(name), "r", encoding="utf-8") as f:
+                    preset = json.load(f)
+            except IOError:
+                return
+            for k, v in preset.items():
+                n[k].fromScript(v)
+
+        preset_knob_names = (
+          'output_exr',
+          'output_mov',
+          'output_png',
+          'exr_threshold',
+          'format',
+          'mov_codec',
+          'no_motionblur',
+          'exr_colorspace',
+          'mov_colorspace',
+        )
+        @classmethod
+        def save_preset(cls, name):
+            import json
+            import codecs
+
+            n = nuke.thisNode()
+            with codecs.open(cls.preset_path(name), "w", encoding="utf-8") as f:
+                json.dump({
+                  i: n[i].toScript()
+                  for i in cls.preset_knob_names
+                }, f)
+
+        @classmethod
+        def on_create(cls):
+            this = nuke.thisNode()
+            this['custom_frame'].setEnabled(this['use_custom_frame'].value())
+
+            if not nuke.numvalue("this.__initiated"):
+                cls.apply_preset("default")
+                nuke.knob('this.__initiated', 'true')
+
+            old = nuke.value('this.Text_Artist.message')
+            new = nuke.value('root.wlf_artist', '')
+            if new != old:
+                nuke.Undo.disable()
+                nuke.knob('this.Text_Artist.message', new)
+                nuke.Undo.enable()
+
+        @classmethod
+        def on_destroy(cls):
+            pass
+            
+        @staticmethod
+        def autolabel():
+            this = nuke.thisNode()
+            ret = [
+                this.name(),
+                this.node('Write_MOV_1')['file'].evaluate(),
+                this.node('Write_JPG_1')['file'].evaluate(),
+                this['label'].evaluate()
+            ]
+            ret = '\n'.join([i for i in ret if i])
+            ret = ret or autolabel()
+            return ret
+
+        @classmethod
+        def knob_changed(cls):
+            k = nuke.thisKnob()
+            n = nuke.thisNode()
+            if k is n['use_custom_frame']:
+                n['custom_frame'].setEnabled(k.value())
+
+        @staticmethod
+        def create_output_dir(node):
+            _dir = os.path.abspath(
+                '{}/../'.format(nuke.filename(node)))
+            if not os.path.exists(_dir):
+                os.makedirs(_dir)
+
+        @staticmethod
+        def is_reading():
+            import os
+            import sys
+            if os.getenv('WLF_IS_SEPARATE_JOBS') or nuke.numvalue('parent.reading_exr'):
+                filename = nuke.filename(nuke.thisNode(), nuke.REPLACE).decode('utf-8')
+                ret = os.path.exists(filename.encode(sys.getfilesystemencoding()))
+                if not ret:
+                    nuke.tprint('{}: file not exists, will read input: {}'.format(nuke.thisNode().name(), filename))
+            else:
+                ret = False
+            return ret
+
+        @staticmethod
+        def is_write_disabled(output_type):
+            n = nuke.thisNode()
+            if n['reading'].value():
+                return False
+
+            p = nuke.thisParent()
+            if p['disable'].value():
+                return True
+            enabled = {
+                'exr': p['output_exr'].value(),
+                'png': p['output_png'].value(),
+                'mov': p['output_mov'].value(),
+            }
+            import os
+            if (
+                os.getenv('WLF_IS_SEPARATE_JOBS') and
+                not any(enabled.values())
+            ):
+                # sequence output is required for deadline seperate jobs
+                enabled['exr'] = True
+
+            frame_count = abs(nuke.numvalue('root.first_frame') - nuke.numvalue('root.last_frame')) + 1
+            if frame_count < p['exr_threshold'].value():
+                enabled["exr"] = False
+                enabled["png"] = False
+            return not enabled[output_type]
+
+        class WriteMOV(object):
+            @classmethod
+            def before_render(cls):
+                globals()['__wlf_Write_1_58_3'].create_output_dir(nuke.thisNode())
+                nuke.knob('parent.Write_JPG_1.disable', 'True')
+
+        class WriteJPG(object):
+            blur_node_classes = (
+                'VectorBlur',
+                'VectorBlur2',
+                'CameraShake',
+                'MotionBlur',
+                'OFXcom.revisionfx.rsmb_v3',
+                'OFXcom.genarts.sapphire.blursharpen.s_blurdirectional_v1'
+            )
+            last_render_mode = False
+            blur_nodes = []
+
+            @classmethod
+            def before_render(cls):
+                cls.last_render_mode = nuke.Root()['proxy'].value()
+                cls.blur_nodes = [n for n in nuke.allNodes(group=nuke.Root())
+                                if n.Class() in cls.blur_node_classes and not n['disable'].value()]
+                globals()['__wlf_Write_1_58_3'].create_output_dir(nuke.thisNode())
+                nuke.knob('root.proxy', 'False')
+                if nuke.numvalue('parent.no_motionblur'):
+                    map(lambda n: n['disable'].setValue(
+                        True), cls.blur_nodes)
+
+            @classmethod
+            def after_render(cls):
+                nuke.knob('root.proxy', str(cls.last_render_mode))
+                if nuke.numvalue('parent.no_motionblur'):
+                    map(lambda n: n['disable'].setValue(
+                        False), cls.blur_nodes)
+                nuke.knob('this.disable', 'True')
+__wlf_Write_1_58_3.on_create()
+}
+ onDestroy __wlf_Write_1_58_3.on_destroy()
+ autolabel __wlf_Write_1_58_3.autolabel()
+ knobChanged {
+try:
+    __wlf_Write_1_58_3.knob_changed()
+except NameError:
+    pass
+}
+ tile_color 0xbfbf00ff
+ note_font 微软雅黑
+ addUserKnob {20 Write l "wlf_Write v1.58.3"}
+ addUserKnob {41 format l 输出格式 T Reformat1.format}
+ addUserKnob {45 views l 视图}
+ views {main}
+ addUserKnob {26 jpg_text l 单帧}
+ addUserKnob {6 use_custom_frame l 指定帧 +STARTLINE}
+ addUserKnob {3 custom_frame l "" -STARTLINE +DISABLED}
+ custom_frame 1
+ addUserKnob {3 frame l INVISIBLE +INVISIBLE}
+ frame {{"\[python -execlocal first,\\ last\\ =\\ nuke.numvalue('root.first_frame'),\\ nuke.numvalue('root.last_frame')\\nmiddle\\ =\\ (first\\ +\\ last)//2\\nthisNode\\ =\\ nuke.thisNode()\\nif\\ thisNode\\\['use_custom_frame'\\].value()\\ :\\n\\ \\ \\ \\ ret\\ =\\ thisNode\\\['custom_frame'\\].value()\\nelse:\\n\\ \\ \\ \\ ret\\ =\\ middle]"}}
+ addUserKnob {32 bt_first l 首帧 -STARTLINE T "set first_frame \[value root.first_frame] \nknob use_custom_frame 1\nknob custom_frame \$first_frame\nframe \$first_frame"}
+ addUserKnob {32 bt_middle l 中间帧(默认) -STARTLINE T "knob this.use_custom_frame 0\nframe \[value this.knob.frame]"}
+ addUserKnob {32 bt_last l 末帧 -STARTLINE T "set last_frame \[value root.last_frame] \nknob use_custom_frame 1\nknob custom_frame \$last_frame\nframe \$last_frame"}
+ addUserKnob {32 bt_this l 当前帧 -STARTLINE T "knob use_custom_frame 1\nknob custom_frame \[x]"}
+ addUserKnob {6 no_motionblur l 渲染时不带运动模糊 +STARTLINE}
+ no_motionblur true
+ addUserKnob {26 exr_text l 序列}
+ addUserKnob {3 exr_threshold l 启用阈值 t 工程长度大于此值时才会输出 -STARTLINE}
+ exr_threshold 100
+ addUserKnob {6 output_exr l exr t 输出exr +STARTLINE}
+ addUserKnob {41 exr_colorspace l 颜色 T Write_EXR_1.colorspace -STARTLINE}
+ output_exr true
+ addUserKnob {6 output_png l png t 输出png +STARTLINE}
+ output_png false
+ addUserKnob {26 video_text l 视频}
+ addUserKnob {6 output_mov l mov t 输出mov +STARTLINE}
+ output_mov true
+ addUserKnob {41 mov_codec l 编码 T Write_MOV_1.meta_codec -STARTLINE}
+ addUserKnob {41 mov_colorspace l 颜色 T Write_MOV_1.colorspace -STARTLINE}
+ addUserKnob {26 ""}
+ addUserKnob {32 bt_render_JPG l 渲染单帧 T "knob this.reading none\nknob this.Write_JPG_1.disable 0\nknob this.Read_JPG_1.disable 1\nexecute this.Write_JPG_1 \[value this.knob.frame]\nknob this.Read_JPG_1.version \[expr \[value this.Read_JPG_1.version]+1]\nknob this.Read_JPG_1.disable 0\nknob this.reading jpg" +STARTLINE}
+ addUserKnob {22 bt_render l 渲染已选 -STARTLINE T "nukescripts.showRenderDialog(\[nuke.thisNode()], False)"}
+ addUserKnob {6 reading_exr l 读取序列 t "渲染视频时不再计算已经输出了序列的帧, 直接读取结果"}
+ addUserKnob {22 bt_save_default l 设为默认配置 t "将当前配置设为默认值" -STARTLINE T "cls = __wlf_Write_1_58_3\ncls.save_preset('default')\nnuke.message('已保存至:\\n%s' % cls.preset_path('default'))"}
+ addUserKnob {20 group_folders l 打开输出文件夹 n 1}
+ group_folders 0
+ addUserKnob {22 bt_img_dir l 单帧 -STARTLINE T "path = os.path.join(nuke.value('root.project_directory'), 'images')\nif os.path.isdir(path):\n    nukescripts.start('file://'+path)\nelse:\n    nuke.message('输出路径不存在, 请先尝试渲染')"}
+ addUserKnob {22 bt_mov_dir l 视频 -STARTLINE T "path = os.path.join(nuke.value('root.project_directory'), 'mov')\nif os.path.isdir(path):\n    nukescripts.start('file://'+path)\nelse:\n    nuke.message('输出路径不存在, 请先尝试渲染')"}
+ addUserKnob {22 bt_seq_dir l 序列 -STARTLINE T "path = os.path.join(nuke.value('root.project_directory'), 'sequences')\nif os.path.isdir(path):\n    nukescripts.start('file://'+path)\nelse:\n    nuke.message('输出路径不存在, 请先尝试渲染')"}
+ addUserKnob {20 endGroup n -1}
+ addUserKnob {83 reading l 读取 M {none mov jpg}}
+ addUserKnob {22 reload -STARTLINE T "for n in nuke.thisNode().nodes():\n    if n.Class() == 'Read':\n        n\['reload'].execute()"}
+ addUserKnob {6 __initiated +INVISIBLE}
+ __initiated true
+}
+Read {
+inputs 0
+file "\[value Write_JPG_1.file]"
+proxy "\[value Write_JPG_1.proxy]"
+origset true
+name Read_JPG_1
+disable {{"parent.reading != 2"}}
+xpos 180
+ypos -198
+}
+Read {
+inputs 0
+file "\[value Write_MOV_2.file]"
+proxy "\[value Write_MOV_2.proxy]"
+last {{"root.last_frame - root.first_frame + 1"}}
+frame "frame - root.first_frame + 1"
+origset true
+name Read_MOV_2
+disable {{"parent.reading != 1"}}
+xpos 90
+ypos -344
+}
+Constant {
+inputs 0
+channels rgb
+format "1920 1080 0 0 1920 1080 1 HD_1080"
+name Constant1
+xpos 90
+ypos -750
+}
+Text2 {
+font_size_toolbar 100
+font_width_toolbar 100
+font_height_toolbar 100
+opacity 0.3
+message "\[lindex \[split \[basename \[value root.name]] .] 0]"
+old_message {{119 119}
+  }
+old_expression_markers {{0 1}
+  }
+box {20 20 1000 75}
+transforms {{0 2}
+  }
+cursor_position 50
+font {{ Source Han Sans SC : Normal : SourceHanSansSC-Normal.otf : 0 }}
+global_font_scale 0.65
+scale {1 1}
+cursor_initialised true
+autofit_bbox false
+initial_cursor_position {{24 122.5}
+  }
+animation_layers {{1 11 960 540 0 0 1 1 0 0 0 0}
+  }
+enable_background {{!root.proxy}}
+background_opacity 0.3
+background_border_x 20
+name Text_Shot
+label 镜头名称
+xpos 90
+ypos -674
+}
+Text2 {
+font_size_toolbar 100
+font_width_toolbar 100
+font_height_toolbar 100
+opacity 0.34
+message "\[x]"
+old_message {{53 54}
+  }
+old_expression_markers {{0 1}
+  }
+box {1700 20 1900 75}
+xjustify right
+transforms {{0 2}
+  }
+cursor_position 3
+font {{ Source Han Sans SC : Normal : SourceHanSansSC-Normal.otf : 0 }}
+global_font_scale 0.65
+scale {1 1}
+cursor_initialised true
+autofit_bbox false
+initial_cursor_position {{1778.5 128.5}
+  }
+animation_layers {{1 11 960 540 0 0 1 1 0 0 0 0}
+  }
+enable_background {{!root.proxy}}
+background_opacity 0.3
+background_border_x 20
+name Text_Frame
+label 帧编号
+xpos 90
+ypos -632
+}
+Text2 {
+font_size_toolbar 100
+font_width_toolbar 100
+font_height_toolbar 100
+opacity 0.34
+box {1098 1000.5 1900 1055.5}
+xjustify right
+transforms {{0 2}
+  }
+font {{ Source Han Sans SC : Normal : SourceHanSansSC-Normal.otf : 0 }}
+global_font_scale 0.5
+scale {1 1}
+cursor_initialised true
+autofit_bbox false
+initial_cursor_position {{1778.5 128.5}
+  }
+animation_layers {{1 11 960 540 0 0 1 1 0 0 0 0}
+  }
+enable_background {{!root.proxy}}
+background_opacity 0.3
+background_border_x 20
+name Text_Artist
+label 制作人
+xpos 90
+ypos -590
+}
+Reformat {
+resize fit
+name Reformat1
+xpos 90
+ypos -548
+}
+set C7af3800 [stack 0]
+Input {
+inputs 0
+name Input
+xpos 0
+ypos -1064
+}
+clone $C7af3800 {
+xpos 0
+ypos -1032
+}
+Write {
+file "images/\[lindex \[split \[basename \[value root.name]] .] 0].jpg"
+proxy "images/\[lindex \[split \[basename \[value root.name]] .] 0].jpg"
+views {{{parent.views}}}
+file_type jpeg
+_jpeg_quality 1
+_jpeg_sub_sampling 4:4:4
+render_order 3
+first {{parent.knob.frame}}
+last {{first}}
+use_limit true
+checkHashOnRead false
+in_colorspace linear
+out_colorspace linear
+beforeRender __wlf_Write_1_58_3.WriteJPG.before_render()
+afterRender __wlf_Write_1_58_3.WriteJPG.after_render()
+name Write_JPG_1
+label "单帧\n会在退出脚本时自动输出"
+xpos 0
+ypos -1000
+disable true
+}
+Write {
+file "sequences/\[lindex \[split \[basename \[value root.name]] .] 0]/\[lindex \[split \[basename \[value root.name]] .] 0].%d.exr"
+proxy "sequences/proxy/\[lindex \[split \[basename \[value root.name]] .] 0]/\[lindex \[split \[basename \[value root.name]] .] 0].%d.exr"
+file_type exr
+render_order 0
+reading {{"\[python __wlf_Write_1_58_3.is_reading()]"}}
+checkHashOnRead false
+name Write_EXR_1
+xpos 0
+ypos -918
+disable {{"\[python __wlf_Write_1_58_3.is_write_disabled('exr')]"}}
+}
+Write {
+channels {rgba.red rgba.green rgba.blue rgba.alpha}
+file "sequences/\[lindex \[split \[basename \[value root.name]] .] 0]/\[lindex \[split \[basename \[value root.name]] .] 0].%d.png"
+proxy "sequences/proxy/\[lindex \[split \[basename \[value root.name]] .] 0]/\[lindex \[split \[basename \[value root.name]] .] 0].%d.png"
+file_type png
+datatype "16 bit"
+render_order 0
+reading {{"\[python __wlf_Write_1_58_3.is_reading()]"}}
+checkHashOnRead false
+name Write_PNG_1
+selected true
+xpos 0
+ypos -862
+disable {{"\[python __wlf_Write_1_58_3.is_write_disabled('png')]"}}
+}
+Write {
+file "mov/\[lindex \[split \[basename \[value root.name]] .] 0].mov"
+proxy "mov/proxy/\[lindex \[split \[basename \[value root.name]] .] 0].mov"
+colorspace sRGB
+views {{{parent.views}}}
+file_type mov
+meta_codec apch
+mov32_codec "rle "
+mov32_pixel_format {{0} "default (RGBA  8-bit)" "RGBA  8-bit"}
+mov64_codec apch
+mov64_fps {{root.fps}}
+beforeRender __wlf_Write_1_58_3.WriteMOV.before_render()
+disable {{"\[python __wlf_Write_1_58_3.is_write_disabled('mov')]"}}
+name Write_MOV_1
+xpos 0
+ypos -806
+}
+Merge2 {
+inputs 2
+name Merge1
+label burn-in
+xpos 0
+ypos -516
+}
+Write {
+file "mov/burn-in/\[lindex \[split \[basename \[value root.name]] .] 0].mov"
+proxy "mov/proxy/burn-in/\[lindex \[split \[basename \[value root.name]] .] 0].mov"
+colorspace {{{Write_MOV_1.colorspace}}}
+views {{{parent.views}}}
+file_type mov
+meta_codec {{{Write_MOV_1.meta_codec}}}
+disable {{{Write_MOV_1.disable}}}
+mov32_codec "rle "
+mov64_codec apch
+mov64_fps {{root.fps}}
+render_order 2
+checkHashOnRead false
+beforeRender __wlf_Write_1_58_3.WriteMOV.before_render()
+name Write_MOV_2
+label 带帧编号的MOV
+xpos 0
+ypos -474
+}
+Assert {
+expression {{"\[python bool(nuke.value('root.project_directory'))]"}}
+message 工程目录未设置
+name Assert3
+xpos 0
+ypos -406
+}
+Assert {
+expression {{"\[python bool(nuke.value('root.name'))]"}}
+message 工程未保存
+name Assert1
+xpos 0
+ypos -374
+}
+Switch {
+inputs 3
+which {{parent.reading}}
+name Switch2
+xpos 0
+ypos -52
+}
+Output {
+name Output1
+xpos 0
+ypos -20
+}
+end_group

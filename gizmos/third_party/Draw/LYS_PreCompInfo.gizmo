@@ -1,0 +1,186 @@
+#! C:/Program Files/Nuke13.2v8/nuke-13.2.8.dll -nx
+version 13.2 v8
+Group {
+ name LYS_PreCompInfo1
+ tile_color 0x2558dbff
+ gl_color 0xa0ff3200
+ label 匹配乐元素
+ selected true
+ xpos 168
+ ypos -62
+
+ addUserKnob {20 PreCompInfo}
+ addUserKnob {7 fontScale l 大小 R 0.5 3}
+ fontScale 0.7
+ addUserKnob {7 margin l 边距 R 0 0.2}
+ margin 0.02
+ addUserKnob {7 textOpacity l 透明度 R 0 1}
+ textOpacity 0.4
+ addUserKnob {6 textStroke l 描边 +STARTLINE}
+ addUserKnob {1 info l 左下角}
+ info "\[if {\[value root.name] eq \"\"} {return \"#错误: 脚本未保存，无法获取文件名\"} {return \[file rootname \[basename \[value root.name]]]}]"
+ addUserKnob {20 endGroup n -1}
+}
+ Input {
+  inputs 0
+  name Input
+  gl_color 0x32a7ff00
+  xpos -111
+  ypos -291
+ }
+ Text2 {
+  font_size_toolbar 100
+  font_width_toolbar 100
+  font_height_toolbar 100
+  opacity {{parent.textOpacity}}
+  message "\[clock format \[clock seconds] -format \"%Y/%m/%d\"]"
+  old_message {{50 48 50 54 47 48 57 47 50 57}
+    }
+  old_expression_markers {{0 9}
+    }
+  box {0 0 {Input.format.r*(1-parent.margin)} {(Input.format.t)-(parent.margin*Input.format.r)}}
+  xjustify right
+  transforms {{0 2}
+    }
+  cursor_position 45
+  font {{ Source Han Sans SC : Normal : SourceHanSansSC-Normal.otf : 0 }}
+  global_font_scale {{Input.format.r*0.0003*parent.fontScale}}
+  scale {1 1}
+  cursor_initialised true
+  autofit_bbox false
+  initial_cursor_position {{1778.5 128.5}
+    }
+  group_animations {{0} imported: 0 selected: items: "root transform/"}
+  animation_layers {{1 11 960 540 0 0 1 1 0 0 0 0}
+    }
+  enable_background {{!root.proxy}}
+  background_opacity 0
+  background_border_x 0
+  background_border_y 0
+  enable_shadows {{parent.textStroke}}
+  shadow_distance 0
+  shadow_size 3
+  name Text_Date
+  gl_color 0x74ff3200
+  label 提交日期
+  xpos 18
+  ypos -210
+ }
+ Text2 {
+  font_size_toolbar 100
+  font_width_toolbar 100
+  font_height_toolbar 100
+  opacity {{parent.textOpacity}}
+  message WLF
+  old_message {{87 76 70}
+    }
+  box {{parent.margin*Input.format.r} 0 {Input.format.r} {(Input.format.t)-(parent.margin*Input.format.r)}}
+  transforms {{0 2}
+    }
+  cursor_position 3
+  font {{ Source Han Sans SC : Normal : SourceHanSansSC-Normal.otf : 0 }}
+  global_font_scale {{Input.format.r*0.0003*parent.fontScale}}
+  scale {1 1}
+  cursor_initialised true
+  autofit_bbox false
+  initial_cursor_position {{24 122.5}
+    }
+  group_animations {{0} imported: 0 selected: items: "root transform/"}
+  animation_layers {{1 11 960 540 0 0 1 1 0 0 0 0}
+    }
+  enable_background {{!root.proxy}}
+  background_opacity 0
+  background_border_x 0
+  background_border_y 0
+  enable_shadows {{parent.textStroke}}
+  shadow_distance 0
+  shadow_size 3
+  name Text_Company
+  gl_color 0x32ffb100
+  label 公司
+  xpos 18
+  ypos -138
+ }
+ Text2 {
+  font_size_toolbar 100
+  font_width_toolbar 100
+  font_height_toolbar 100
+  opacity {{parent.textOpacity}}
+  message "\[value parent.info]"
+  old_message {{50 53}
+    }
+  old_expression_markers {{0 1}
+    }
+  box {{parent.margin*Input.format.r} {parent.margin*Input.format.r} {Input.format.r} {Input.format.t}}
+  yjustify bottom
+  transforms {{0 2}
+    }
+  cursor_position 21
+  font {{ Source Han Sans SC : Normal : SourceHanSansSC-Normal.otf : 0 }}
+  global_font_scale {{Input.format.r*0.0003*parent.fontScale}}
+  scale {1 1}
+  cursor_initialised true
+  autofit_bbox false
+  initial_cursor_position {{24 122.5}
+    }
+  group_animations {{0} imported: 0 selected: items: "root transform/"}
+  animation_layers {{1 11 960 540 0 0 1 1 0 0 0 0}
+    }
+  enable_background {{!root.proxy}}
+  background_opacity 0
+  background_border_x 0
+  background_border_y 0
+  enable_shadows {{parent.textStroke}}
+  shadow_distance 0
+  shadow_size 3
+  name Text_Shot1
+  gl_color 0x32ffb100
+  label 镜头名称
+  xpos 18
+  ypos -65
+ }
+ Text2 {
+  font_size_toolbar 100
+  font_width_toolbar 100
+  font_height_toolbar 100
+  opacity {{parent.textOpacity}}
+  message "\[x]/\[expr \[value root.last_frame] - \[value root.first_frame] + 1]\n"
+  old_message {{49 47 49 48 48 10}
+    }
+  old_expression_markers {{0 0 2 4}
+    }
+  box {0 {parent.margin*Input.format.r} {Input.format.r*(1-parent.margin)} {Input.format.t}}
+  xjustify right
+  yjustify bottom
+  transforms {{0 2}
+    }
+  font {{ Source Han Sans SC : Normal : SourceHanSansSC-Normal.otf : 0 }}
+  global_font_scale {{Input.format.r*0.0003*parent.fontScale}}
+  scale {1 1}
+  cursor_initialised true
+  autofit_bbox false
+  initial_cursor_position {{1778.5 128.5}
+    }
+  group_animations {{0} imported: 0 selected: items: "root transform/"}
+  animation_layers {{1 11 960 540 0 0 1 1 0 0 0 0}
+    }
+  enable_background {{!root.proxy}}
+  background_opacity 0
+  background_border_x 0
+  background_border_y 0
+  enable_shadows {{parent.textStroke}}
+  shadow_distance 0
+  shadow_size 3
+  name Text_Frame3
+  gl_color 0xff713200
+  label 帧范围
+  xpos 18
+  ypos 41
+ }
+ Output {
+  name Output1
+  gl_color 0x32ff7200
+  xpos 17
+  ypos 150
+ }
+end_group

@@ -1,0 +1,127 @@
+version 13.2 v8
+add_layer {wireframe wireframe.red wireframe.green wireframe.blue wireframe.alpha}
+Group {
+ inputs 2
+ name Texture_Projector1
+ tile_color 0xff00bfff
+ selected true
+ xpos 2141
+ ypos 368
+ lock_connections true
+ addUserKnob {20 ProjectorSetting l "Projector Setting"}
+ addUserKnob {22 ConnectCam l "Connect Cam" T "r = nuke.thisRoot()\nn = nuke.thisNode()\n\nsn = r.selectedNode()\n\nn.setInput(0,sn)" +STARTLINE}
+ addUserKnob {22 ConnectGeo l "Connect Geo" -STARTLINE T "r = nuke.thisRoot()\nn = nuke.thisNode()\n\nsn = r.selectedNode()\n\nn.setInput(1,sn)"}
+ addUserKnob {26 ""}
+ addUserKnob {41 firstFrame l "Hold frame" T FrameHold1.firstFrame}
+ addUserKnob {41 setToCurrentFrame l "Set to Current Frame" -STARTLINE T FrameHold1.setToCurrentFrame}
+ addUserKnob {41 udim l UDIM T UVTile1.udim}
+ addUserKnob {41 format l Format T Constant3.format}
+ addUserKnob {26 ""}
+ addUserKnob {41 project_on l "Project on" T Project3D1.project_on}
+ addUserKnob {41 crop -STARTLINE T Project3D1.crop}
+ addUserKnob {41 occlusion_mode l "Occlusion mode" T Project3D1.occlusion_mode}
+ addUserKnob {26 ""}
+ addUserKnob {6 Wireframe +STARTLINE}
+ Wireframe true
+ addUserKnob {41 channels T Wireframe1.channels}
+ addUserKnob {41 line_color l "line color" T Wireframe1.line_color}
+ addUserKnob {41 line_width l "line width" T Wireframe1.line_width}
+}
+ Input {
+  inputs 0
+  name Cam
+  xpos -388
+  ypos -538
+ }
+ Dot {
+  name Dot1
+  xpos -354
+  ypos -384
+ }
+ FrameHold {
+  firstFrame 1001
+  name FrameHold1
+  xpos -534
+  ypos -394
+ }
+ set C1fe17600 [stack 0]
+ Input {
+  inputs 0
+  name Src
+  xpos -737
+  ypos -536
+  number 2
+ }
+ Project3D2 {
+  inputs 2
+  crop false
+  name Project3D1
+  selected true
+  xpos -737
+  ypos -388
+ }
+ Wireframe {
+  channels wireframe
+  operation over
+  line_width 0.1
+  line_color 0.2
+  name Wireframe1
+  xpos -737
+  ypos -336
+  disable {{"! parent.Wireframe"}}
+ }
+ UVTile2 {
+  udim_enable true
+  name UVTile1
+  xpos -737
+  ypos -238
+ }
+ Input {
+  inputs 0
+  name Geo
+  xpos -1037
+  ypos -245
+  number 1
+ }
+ Dot {
+  name Dot3
+  xpos -1003
+  ypos -84
+ }
+clone $C1fe17600 {
+  xpos -907
+  ypos -94
+  selected false
+ }
+ ApplyMaterial {
+  inputs 2
+  name ApplyMaterial1
+  xpos -737
+  ypos -88
+ }
+ Constant {
+  inputs 0
+  channels none
+  format "2048 2048 0 0 2048 2048 1 square_2K"
+  name Constant3
+  xpos -991
+  ypos 32
+ }
+ ScanlineRender {
+  inputs 2
+  conservative_shader_sampling false
+  antialiasing high
+  projection_mode uv
+  motion_vectors_type off
+  MB_channel none
+  drop_zero_alpha_samples false
+  name ScanlineRender1
+  xpos -737
+  ypos 62
+ }
+ Output {
+  name Output1
+  xpos -732
+  ypos 241
+ }
+end_group

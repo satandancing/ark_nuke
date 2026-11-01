@@ -1,0 +1,393 @@
+#! C:/Program Files/Nuke10.0v4/nuke-10.0.4.dll -nx
+version 10.0 v4
+Group {
+ inputs 3
+ help "Modified from bm_Lightwarp\n\nbm_Lightwarp by Ben McEwan @ www.benmcewan.com"
+ knobChanged "list(k.setEnabled(bool(nuke.numvalue('this.bg_mask'))) for k in nuke.thisNode().allKnobs() if k.name() in ('bg_preview', 'bg_blackpoint', 'bg_whitepoint'))"
+ tile_color 0xcc804eff
+ name wlf_Lightwrap1
+ note_font 微软雅黑
+ addUserKnob {20 tab_1 l "wlf_Lightwrap v0.1.4"}
+ addUserKnob {41 channels l channels(通道) t "Blur channels" T Blur3.channels}
+ addUserKnob {14 bg_blur l blur(模糊) t "Blurs background image before glow treatment is applied" R 0 100}
+ addUserKnob {7 radius l radius(半径) t "Set the size of the glow." R 0 150}
+ radius 100
+ addUserKnob {7 intensity l intensity(强度) t "Set the brightness of the glow." R 0 5}
+ intensity 1
+ addUserKnob {41 gamma t "Shifts the midpoint towards the centre or outside of the glow." T ColorCorrect1.gamma}
+ addUserKnob {41 saturation t "Adjust the saturation of the glow." T ColorCorrect1.saturation}
+ addUserKnob {26 ""}
+ addUserKnob {6 bg_mask l "bg luma affect(背景亮度影响)" t "\n" +STARTLINE}
+ bg_mask true
+ addUserKnob {6 bg_preview l preview +STARTLINE}
+ addUserKnob {7 bg_blackpoint l blackpoint}
+ addUserKnob {7 bg_whitepoint l whitepoint -STARTLINE}
+ bg_whitepoint 1
+ addUserKnob {26 ""}
+ addUserKnob {41 operation l merge T Merge17.operation}
+ addUserKnob {6 effect_only l "effect only" t "Enabled: Renders the glow over black.\nDisabled: Renders glow over the input image, using the operation set in \"Comp Method\"." -STARTLINE}
+ addUserKnob {41 mix T Merge17.mix}
+}
+ Input {
+  inputs 0
+  name InputA
+  xpos 580
+  ypos -1652
+  number 1
+ }
+ Blur {
+  channels rgba
+  size {{parent.bg_blur}}
+  name Blur10
+  xpos 580
+  ypos -1622
+ }
+set N47ca1400 [stack 0]
+ Keyer {
+  operation "luminance key"
+  range {{parent.bg_blackpoint} {parent.bg_whitepoint} 1 1}
+  name Keyer1
+  xpos 670
+  ypos -1226
+ }
+ Dot {
+  name Dot17
+  xpos 704
+  ypos -1170
+ }
+set N47ca0c00 [stack 0]
+ Dot {
+  name Dot1
+  label "B after blur and keyer"
+  xpos 124
+  ypos -124
+  hide_input true
+ }
+ Shuffle {
+  in alpha
+  name Shuffle3
+  xpos 90
+  ypos -102
+ }
+ Input {
+  inputs 0
+  name InputB
+  xpos 670
+  ypos -1592
+ }
+ AddChannels {
+  channels alpha
+  name AddChannels1
+  label "Alpha error fix"
+  xpos 670
+  ypos -1562
+ }
+set Nb44c7c00 [stack 0]
+ Dot {
+  name Dot9
+  label B
+  xpos 670
+  ypos -278
+  hide_input true
+ }
+push $N47ca0c00
+ Input {
+  inputs 0
+  name Inputmask
+  xpos 760
+  ypos -1346
+  number 2
+ }
+ Constant {
+  inputs 0
+  color 1
+  name Constant1
+  xpos 670
+  ypos -1422
+ }
+ Switch {
+  inputs 2
+  which {{"\[exists parent.input2]"}}
+  name Switch2
+  xpos 670
+  ypos -1316
+ }
+ Expression {
+  expr3 a==0?0:a
+  name Expression2
+  xpos 670
+  ypos -1286
+ }
+push $Nb44c7c00
+push $N47ca1400
+ Copy {
+  inputs 2
+  from0 rgba.alpha
+  to0 rgba.alpha
+  name Copy1
+  xpos 580
+  ypos -1506
+ }
+ Invert {
+  channels alpha
+  name Invert1
+  xpos 580
+  ypos -1464
+ }
+ Merge2 {
+  inputs 2
+  operation mask
+  name Merge16
+  xpos 580
+  ypos -1256
+ }
+ Merge2 {
+  inputs 2
+  operation mask
+  name Merge13
+  xpos 580
+  ypos -1148
+  disable {{!parent.bg_mask}}
+ }
+set Nb44fd800 [stack 0]
+ Premult {
+  name Premult1
+  selected true
+  xpos 580
+  ypos -1122
+ }
+ Dot {
+  name Dot2
+  xpos 614
+  ypos -1088
+ }
+set Nb44fd000 [stack 0]
+ Dot {
+  name Dot4
+  xpos 704
+  ypos -432
+  hide_input true
+ }
+ Blur {
+  channels {{{Blur3.channels}}}
+  size {{"parent.radius * 3.2"}}
+  crop false
+  name Blur6
+  xpos 670
+  ypos -410
+ }
+ ColorCorrect {
+  name ColorCorrect1
+  xpos 670
+  ypos -380
+ }
+ set Cb44fc400 [stack 0]
+ Multiply {
+  value 0.2
+  name Multiply2
+  xpos 670
+  ypos -350
+ }
+push $Nb44fd000
+ Dot {
+  name Dot5
+  xpos 704
+  ypos -586
+  hide_input true
+ }
+ Blur {
+  channels {{{Blur3.channels}}}
+  size {{"parent.radius * 1.5"}}
+  crop false
+  name Blur5
+  xpos 670
+  ypos -564
+ }
+clone $Cb44fc400 {
+  xpos 670
+  ypos -534
+  selected false
+ }
+ Multiply {
+  value 0.4
+  name Multiply3
+  xpos 670
+  ypos -504
+ }
+push $Nb44fd000
+ Dot {
+  name Dot6
+  xpos 704
+  ypos -740
+  hide_input true
+ }
+ Blur {
+  channels {{{Blur3.channels}}}
+  size {{"parent.radius * 0.5"}}
+  crop false
+  name Blur4
+  xpos 670
+  ypos -718
+ }
+clone $Cb44fc400 {
+  xpos 670
+  ypos -688
+  selected false
+ }
+ Multiply {
+  value 0.6
+  name Multiply4
+  xpos 670
+  ypos -658
+ }
+push $Nb44fd000
+ Dot {
+  name Dot7
+  xpos 704
+  ypos -894
+  hide_input true
+ }
+ Blur {
+  channels {{{Blur3.channels}}}
+  size {{"parent.radius * 0.25"}}
+  crop false
+  name Blur2
+  xpos 670
+  ypos -872
+ }
+clone $Cb44fc400 {
+  xpos 670
+  ypos -842
+  selected false
+ }
+ Multiply {
+  value 0.8
+  name Multiply5
+  xpos 670
+  ypos -812
+ }
+push $Nb44fd000
+ Dot {
+  name Dot8
+  xpos 704
+  ypos -1006
+  hide_input true
+ }
+ Blur {
+  channels {{{Blur3.channels}}}
+  size {{"parent.radius * 0.07"}}
+  crop false
+  name Blur1
+  xpos 670
+  ypos -984
+ }
+clone $Cb44fc400 {
+  xpos 670
+  ypos -954
+  selected false
+ }
+push $Nb44fd000
+ Blur {
+  channels {rgba.red rgba.green rgba.blue -rgba.alpha}
+  size {{"parent.radius * 0.01"}}
+  crop false
+  name Blur3
+  xpos 580
+  ypos -1066
+ }
+clone $Cb44fc400 {
+  xpos 580
+  ypos -1036
+  selected false
+ }
+ Merge2 {
+  inputs 2
+  operation screen
+  name Merge1
+  xpos 580
+  ypos -924
+ }
+ set Cbb76d800 [stack 0]
+clone $Cbb76d800 {
+  inputs 2
+  xpos 580
+  ypos -770
+  selected false
+ }
+clone $Cbb76d800 {
+  inputs 2
+  xpos 580
+  ypos -616
+  selected false
+ }
+clone $Cbb76d800 {
+  inputs 2
+  xpos 580
+  ypos -462
+  selected false
+ }
+clone $Cbb76d800 {
+  inputs 2
+  xpos 580
+  ypos -308
+  selected false
+ }
+ Merge2 {
+  inputs 2
+  operation mask
+  name Merge15
+  xpos 580
+  ypos -256
+ }
+ Multiply {
+  value {{parent.intensity}}
+  name Multiply1
+  xpos 580
+  ypos -226
+ }
+set Nbb76c000 [stack 0]
+ Premult {
+  invert true
+  name Premult3
+  xpos 580
+  ypos -184
+ }
+push $Nbb76c000
+push $Nb44c7c00
+ Dot {
+  name Dot3
+  label B
+  xpos 34
+  ypos -232
+  hide_input true
+ }
+ Merge2 {
+  inputs 2
+  operation screen
+  bbox B
+  output rgb
+  name Merge17
+  xpos 0
+  ypos -214
+  disable {{parent.effect_only}}
+ }
+ Switch {
+  inputs 2
+  which {{parent.effect_only}}
+  name Switch1
+  xpos 0
+  ypos -154
+ }
+ Switch {
+  inputs 2
+  which {{"parent.bg_preview && parent.bg_mask"}}
+  name Switch3
+  xpos 0
+  ypos -60
+ }
+ Output {
+  name Output1
+  xpos 0
+  ypos -30
+ }
+end_group

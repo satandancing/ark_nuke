@@ -1,0 +1,261 @@
+#! C:/Program Files/Nuke10.0v4/nuke-10.0.4.dll -nx
+version 10.0 v4
+
+Gizmo {
+  onCreate {
+class __PositionKeyer(object):
+    @staticmethod
+    def on_create():
+        if not nuke.numvalue('this.__initiated'):
+            # in
+            n = None
+            viewerwindow = nuke.activeViewer()
+            if viewerwindow:
+                active_input = viewerwindow.activeInput()
+                if active_input:
+                    n = viewerwindow.node().input(active_input)
+
+            layers = nuke.layers(n)
+            for layer in ('P', 'depth'):
+                if layer in layers:
+                    break
+            else:
+                layer = layers[0]
+            nuke.knob('this.in', layer)
+
+        # gl_color
+        color = __import__('colorsys').hsv_to_rgb(__import__('random').random(), 0.8, 1)
+        color = tuple(int(i * 255) for i in color)
+        nuke.thisNode()['gl_color'].setValue(
+            color[0] << 24 | color[1] << 16 | color[2] << 8)
+
+        nuke.knob('this.__initiated', 'true')
+
+    @staticmethod
+    def autolabel():
+        this = nuke.thisNode()
+        xyz_indicator = [
+            ('x' if not this['invert_x'].value() else '~x')
+            if this['x'].value() else None,
+            ('y' if not this['invert_y'].value() else '~y')
+            if this['y'].value() else None,
+            ('z' if not this['invert_y'].value() else '~z')
+            if this['z'].value() else None,
+        ]
+        xyz_indicator = '|'.join([i for i in xyz_indicator if i])
+        if xyz_indicator:
+            channels = '{}.{} -> {}'.format(this['in'].value(),
+                                            xyz_indicator,
+                                            this['output'].value())
+        else:
+            channels = '({})'.format(this['in'].value())
+        ret = [
+            this.name(),
+            channels,
+            this['label'].evaluate()
+        ]
+        ret = '\n'.join([i for i in ret if i])
+        ret = ret or autolabel()
+        return ret
+
+    @staticmethod
+    def sample(n):
+        try:
+            sampler = n.node('Sampler')
+            channels = ('rgba.red', 'rgba.green', 'rgba.blue')
+            sampler['p0'].setValue(tuple(sampler.sample(
+                channel, *n['p0'].value()) for channel in channels))
+            sampler['p1'].setValue(tuple(sampler.sample(
+                channel, *n['p1'].value()) for channel in channels))
+        except ValueError:
+            return
+
+    @classmethod
+    def knob_changed(cls):
+        n = nuke.thisNode()
+        if nuke.thisKnob() in (n['p0'], n['p1']):
+            cls.sample(n)
+
+    @classmethod
+    def layer_changed(cls):
+        if nuke.thisKnob() is nuke.thisNode()['in']:
+            cls.sample(nuke.thisParent())
+
+
+__PositionKeyer.on_create()
+}
+ autolabel __PositionKeyer.autolabel()
+ knobChanged {
+try:
+    __PositionKeyer.knob_changed()
+except NameError:
+    pass
+}
+ tile_color 0xff00ff
+ note_font 微软雅黑
+ addUserKnob {20 positionkeyer l "PositionKeyer v1.4.3"}
+ addUserKnob {41 in l "sample layer" t "用来取样的图层,一般是P层。但也可以用其他图层(例如depth)" T Shuffle2.in}
+ addUserKnob {20 sampler l 取样器 n 1}
+ addUserKnob {12 p0}
+ p0 {100 300}
+ addUserKnob {12 p1}
+ p1 {300 100}
+ addUserKnob {20 sampler_end n -1}
+ addUserKnob {26 div_settings l <b>设置</b>}
+ addUserKnob {4 mode l mode(模式) M {Ramp(渐变) Distance(距离) Sphere(球)}}
+ addUserKnob {41 blackpoint l blackpoint(黑点) t 低于此值将为黑色 T Sampler.p0}
+ addUserKnob {41 whitepoint l whitepoint(白点) t 高于此值将为白色 T Sampler.p1}
+ addUserKnob {7 rotation_x l "rotation x(旋转x轴)" R 0 180}
+ addUserKnob {7 rotation l "rotation y(旋转y轴)" R 0 180}
+ rotation 90
+ addUserKnob {7 rotation_z l "rotation z(旋转z轴)" R 0 180}
+ addUserKnob {13 scale l scale(缩放)}
+ scale {1 1 1}
+ addUserKnob {26 t_alpha_output l output}
+ addUserKnob {6 x +STARTLINE}
+ x true
+ addUserKnob {6 invert_x l invert(反转) -STARTLINE}
+ addUserKnob {6 y +STARTLINE}
+ addUserKnob {6 invert_y l invert(反转) -STARTLINE}
+ addUserKnob {6 z +STARTLINE}
+ addUserKnob {6 invert_z l invert(反转) -STARTLINE}
+ addUserKnob {41 output l channel T Keyer1.output}
+ addUserKnob {41 combine l "" t "决定如何和已有输出通道数据合并:\nreplace:\t替换\nintersect:\t交集\nunion:\t并集" -STARTLINE T Keyer1.combine}
+ addUserKnob {20 g_presets l presets(预设) n 1}
+ addUserKnob {32 bt_x l X -STARTLINE T "knob x 1\nknob y 0\nknob z 0\nknob invert_x 0\nknob invert_y 0\nknob invert_z 0\nknob rotation 90\nknob rotation_x 0\nknob rotation_z 0"}
+ addUserKnob {32 bt_y l Y -STARTLINE T "knob x 0\nknob y 1\nknob z 0\nknob invert_x 0\nknob invert_y 0\nknob invert_z 0\nknob rotation 90\nknob rotation_x 0\nknob rotation_z 0"}
+ addUserKnob {32 bt_z l Z -STARTLINE T "knob x 0\nknob y 0\nknob z 1\nknob invert_x 0\nknob invert_y 0\nknob invert_z 0\nknob rotation 90\nknob rotation_x 0\nknob rotation_z 0"}
+ addUserKnob {20 endGroup n -1}
+ addUserKnob {32 bt_update l INVISIBLE +INVISIBLE +STARTLINE}
+ addUserKnob {6 __initiated l INVISIBLE +INVISIBLE +STARTLINE}
+ __initiated false
+ addUserKnob {26 docs l "" +STARTLINE T "位置键出\n获取不随镜头变化的固定位置。\ntips: 也可用于depth层来得到随镜头变化的远近范围,不过此时旋转无效(因为depth只有一个通道)。\n\n1. 将节点连接至拥有位置层的节点,并设置sample layer(通常是P层)\n2. 拖动查看器中的控制器, p1代表要的部分, p0代表不要的部分\n3. 结果为输出的alpha, r,g,b通道分别显示在x,y,z轴上的输出\n\n© 2017-2024 北京吾立方数码科技有限公司"}
+}
+ Input {
+  inputs 0
+  name Input
+  xpos 180
+  ypos -1378
+ }
+set N366dee00 [stack 0]
+ Shuffle {
+  in rgba
+  name Shuffle2
+  knobChanged "
+try:
+    __PositionKeyer.layer_changed()
+except NameError:
+    pass
+except:
+    print('EXCEPTION: __PositionKeyer.layer_changed')
+    raise
+"
+  xpos 180
+  ypos -1308
+ }
+ NoOp {
+  name Sampler
+  label 取样器
+  xpos 180
+  ypos -1270
+  addUserKnob {20 Result}
+  addUserKnob {18 p0 l "point 0"}
+  p0 {0 0 0}
+  addUserKnob {18 p1 l "point 1"}
+  p1 {0 0 0}
+ }
+ BlinkScript {
+  ProgramGroup 1
+  KernelDescription "2 \"PositionKeyer\" iterate pixelWise a3bb0497038846c24dcc1045302696c8588609eb89d5062f6a8611ccb941075d 2 \"position\" Read Point \"dst\" Write Point 11 \"invert_x\" Bool 1 AA== \"invert_y\" Bool 1 AA== \"invert_z\" Bool 1 AA== \"enable_x\" Bool 1 AA== \"enable_y\" Bool 1 AA== \"enable_z\" Bool 1 AA== \"mode\" Int 1 AAAAAA== \"rotate\" Float 3 AAAAAAAAAAAAAAAAAAAAAA== \"scale\" Float 3 AAAAAAAAAAAAAAAAAAAAAA== \"p0_color\" Float 4 AAAAAAAAAAAAAAAAAAAAAA== \"p1_color\" Float 4 AAAAAAAAAAAAAAAAAAAAAA== 11 \"invert_x\" 1 1 \"invert_y\" 1 1 \"invert_z\" 1 1 \"enable_x\" 1 1 \"enable_y\" 1 1 \"enable_z\" 1 1 \"mode\" 1 1 \"rotate\" 3 1 \"scale\" 3 1 \"p0_color\" 4 1 \"p1_color\" 4 1 2 \"p0\" Float 3 1 AAAAAAAAAAAAAAAAAAAAAA== \"p1\" Float 3 1 AAAAAAAAAAAAAAAAAAAAAA=="
+  kernelSource "// PositionKeyerKernel\n// VERSION: 0.5.2\nkernel PositionKeyer : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessPoint, eEdgeClamped> position;\n  Image<eWrite, eAccessPoint> dst;\n\nparam:\n  bool invert_x;\n  bool invert_y;\n  bool invert_z;\n  bool enable_x;\n  bool enable_y;\n  bool enable_z;\n  int mode;\n  float3 rotate;\n  float3 scale;\n  float4 p0_color;\n  float4 p1_color;\n\nlocal:\n  float3 p0;\n  float3 p1;\n\n  float3 rotate3(float3 point, float3 rotate)\n  \{\n    float sx = sin(rotate.x);\n    float cx = cos(rotate.x);\n    float sy = sin(rotate.y);\n    float cy = cos(rotate.y);\n    float sz = sin(rotate.z);\n    float cz = cos(rotate.z);\n    float xy, xz, yx, yz, zx, zy;\n    xy = cx * point.y - sx * point.z;\n    xz = sx * point.y + cx * point.z;\n    yx = cy * point.x - sy * xz;\n    yz = sy * point.x + cy * xz;\n    zx = cz * yx - sz * xy;\n    zy = sz * yx + cz * xy;\n    point.x = zx;\n    point.y = zy;\n    point.z = yz;\n    return point;\n  \}\n  float3 rotate3(float4 point, float3 rotate)\n  \{\n    return rotate3(to_float3(point), rotate);\n  \}\n  float linear(float x, float p0, float p1)\n  \{\n    if (p1 == p0)\n    \{\n      return p0;\n    \}\n    return (x - p0) / (p1 - p0);\n  \}\n  float3 to_float3(float4 input)\n  \{\n    return float3(input.x, input.y, input.z);\n  \}\n\n  float3 ramp_result(float3 pos)\n  \{\n    return float3(\n        linear(pos.x, p0.x, p1.x),\n        linear(pos.y, p0.y, p1.y),\n        linear(pos.z, p0.z, p1.z));\n  \}\n\n  float3 distance_result(float3 pos)\n  \{\n    return float3(\n        1 - fabs(pos.x - p1.x) / fabs(p1.x - p0.x) / scale.x,\n        1 - fabs(pos.y - p1.y) / fabs(p1.y - p0.y) / scale.y,\n        1 - fabs(pos.z - p1.z) / fabs(p1.z - p0.z) / scale.z);\n  \}\n  float3 sphere_result(float3 pos)\n  \{\n    float ret = 1 - length((pos - p1) / scale) / (length(p1 - p0));\n    return float3(ret, ret, ret);\n  \}\n\n  void init()\n  \{\n    p0 = rotate3(p0_color, rotate);\n    p1 = rotate3(p1_color, rotate);\n  \}\n\n  void process()\n  \{\n    float3 pos = rotate3(position(), rotate);\n    float3 result;\n\n    if (mode == 0)\n    \{\n      result = ramp_result(pos);\n    \}\n    else if (mode == 1)\n    \{\n      result = distance_result(pos);\n    \}\n    else if (mode == 2)\n    \{\n      result = sphere_result(pos);\n    \}\n\n    result = clamp(result, float3(0.0f), float3(1.0f));\n\n    // Handle invert.\n    result.x = invert_x ? (1 - result.x) : result.x;\n    result.y = invert_y ? (1 - result.y) : result.y;\n    result.z = invert_z ? (1 - result.z) : result.z;\n\n    dst() = float4(\n        result.x,\n        result.y,\n        result.z,\n        (enable_x ? result.x : 1) * (enable_y ? result.y : 1) * (enable_z ? result.z : 1));\n  \}\n\};\n"
+  useGPUIfAvailable false
+  vectorize false
+  rebuild ""
+  PositionKeyer_invert_x {{parent.invert_x}}
+  PositionKeyer_invert_y {{parent.invert_y}}
+  PositionKeyer_invert_z {{parent.invert_z}}
+  PositionKeyer_enable_x {{parent.x}}
+  PositionKeyer_enable_y {{parent.y}}
+  PositionKeyer_enable_z {{parent.z}}
+  PositionKeyer_mode {{parent.mode}}
+  PositionKeyer_rotate {{radians(parent.knob.rotation_x)} {"radians(parent.knob.rotation - 90)"} {radians(parent.knob.rotation_z)}}
+  PositionKeyer_scale {{parent.scale} {parent.scale} {parent.scale}}
+  PositionKeyer_p0_color {{parent.Sampler.p0} {parent.Sampler.p0} {parent.Sampler.p0} {parent.Sampler.p0}}
+  PositionKeyer_p1_color {{parent.Sampler.p1} {parent.Sampler.p1} {parent.Sampler.p1} {parent.Sampler.p1}}
+  protectKernelWhenPublishing true
+  rebuild_finalise ""
+  name BlinkScript1
+  selected true
+  xpos 180
+  ypos -1218
+ }
+set N366de380 [stack 0]
+ Dot {
+  name Dot2
+  xpos 544
+  ypos -1374
+  hide_input true
+ }
+push $N366dee00
+push $N366dee00
+ Copy {
+  inputs 2
+  from0 {{{parent.Keyer1.output}}}
+  to0 rgba.alpha
+  name Copy2
+  xpos 290
+  ypos -1308
+ }
+set N3672dc00 [stack 0]
+ ChannelMerge {
+  inputs 2
+  name ChannelMerge2
+  xpos 510
+  ypos -1329
+ }
+push $N366de380
+ Dot {
+  name Dot1
+  xpos 434
+  ypos -1374
+  hide_input true
+ }
+push $N3672dc00
+ ChannelMerge {
+  inputs 2
+  operation in
+  name ChannelMerge1
+  xpos 400
+  ypos -1226
+ }
+push $N366de380
+ Switch {
+  inputs 3
+  which {{parent.combine}}
+  name Switch1
+  xpos 510
+  ypos -1210
+ }
+set N3672ce00 [stack 0]
+push $N3672ce00
+ Copy {
+  inputs 2
+  from0 rgba.alpha
+  to0 {{{parent.Keyer1.output}}}
+  name Copy1
+  xpos 510
+  ypos -1182
+ }
+ Output {
+  name Output1
+  xpos 510
+  ypos -1138
+ }
+ Keyer {
+  inputs 0
+  operation "luminance key"
+  name Keyer1
+  xpos 70
+  ypos -1395
+ }
+end_group

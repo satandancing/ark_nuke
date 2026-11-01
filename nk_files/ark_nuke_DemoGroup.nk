@@ -1,0 +1,25 @@
+# Minimal example Group saved as .nk (not a binary .gizmo).
+# Open in Nuke or File > Import Nodes if desired.
+version 16.0 v7
+Root {
+ inputs 0
+ name Scene
+}
+Group {
+ name ark_nuke_DemoGroup
+ tile_color 0xffaa00ff
+ addUserKnob {20 User l ark_nuke}
+ addUserKnob {26 info l "" t "Demo group from ark_nuke scaffold"}
+}
+Input {
+ inputs 0
+ name Input1
+ xpos 0
+ ypos 0
+}
+Output {
+ name Output1
+ xpos 0
+ ypos 100
+}
+end_group
