@@ -4,15 +4,17 @@
 
 ```
 ark_nuke/
-  init.py           # 所有会话：为子目录 pluginAddPath
-  menu.py           # 仅 GUI：顶栏菜单「Ark」
-  install_nuke.cmd  # Windows：向 %UserProfile%\.nuke\init.py 追加路径（可重复执行、不重复写入）
-  install_nuke.sh   # Unix 对应脚本
-  gizmos/           # .gizmo 插件
-  python/           # Python 模块（经 init 加入路径）
-  nk_files/         # .nk 片段 / ToolSets
-  icons/            # 菜单 / 工具栏图标
-  third_party/      # GitHub 开源插件（每仓库一文件夹，自动扫描加载）
+  init.py             # 所有会话：为子目录 pluginAddPath
+  menu.py             # 仅 GUI：顶栏菜单「Ark」
+  install_nuke.cmd    # Windows：向 %UserProfile%\.nuke\init.py 追加路径（可重复执行、不重复写入）
+  install_nuke.sh     # Linux / macOS：向 ~/.nuke/init.py 追加路径
+  uninstall_nuke.cmd  # Windows：从 init.py 移除本工具包路径（可重复执行）
+  uninstall_nuke.sh   # Linux / macOS：从 init.py 移除本工具包路径
+  gizmos/             # .gizmo 插件
+  python/             # Python 模块（经 init 加入路径）
+  nk_files/           # .nk 片段 / ToolSets
+  icons/              # 菜单 / 工具栏图标
+  third_party/        # GitHub 开源插件（每仓库一文件夹，自动扫描加载）
 ```
 
 ## 安装（Windows）
@@ -25,6 +27,18 @@ ark_nuke/
 
 ```python
 nuke.pluginAddPath(r'D:/software_dev/ark_nuke')
+```
+
+## 卸载
+
+只删除安装时写入的那一行 `nuke.pluginAddPath(r'<本目录>')`。其它插件路径，以及 `init.py` 里的其余内容，都会保留。脚本可重复执行。完成后重启 Nuke。
+
+Windows：双击或运行 `uninstall_nuke.cmd`。
+
+Linux / macOS：
+
+```bash
+bash uninstall_nuke.sh
 ```
 
 ## Nuke 16 说明
